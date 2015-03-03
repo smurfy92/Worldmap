@@ -1,0 +1,1 @@
+N'oublie pas de supprimer les anciennes tables(town et town2) avant d'importer le fichier sql dans worldmap
