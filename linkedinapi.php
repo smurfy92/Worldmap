@@ -116,8 +116,15 @@ function fetch($method, $resource, $body = '') {
     // Native PHP object, please
     return json_decode($response);
 }
-function strreplace($str){
-
+function NoAccentTag($str)
+{
+    $str = htmlentities($str);
+    
+    $str = preg_replace('#&([A-za-z])(?:acute|cedil|circ|grave|orn|ring|slash|th|tilde|uml);#', '\1', $str);
+    $str = preg_replace('#&([A-za-z]{2})(?:lig);#', '\1', $str); // pour les ligatures e.g. '&oelig;'
+    $str = preg_replace('#&[^;]+;#', '', $str); // supprime les autres caractères
+    
+    return $str;
 }
 
 
@@ -133,7 +140,7 @@ $url = $userapi->siteStandardProfileRequest->url;
 $connections = $users->values;
 
 $finapi=date("H:i:s");
-$debutbbd=date("H:i:s");
+
 
 
 
@@ -145,7 +152,7 @@ $finaltab=[];
 $tableau=[];
 $town=[];
 $town2=[];
-$count=0;
+$countgeo=0;
 $towntotal=0;
 $town2total=0;
 
@@ -174,103 +181,130 @@ while($data2=mysqli_fetch_assoc($req2)){
 
 
 // now creating array with geocode calls and database insertion
-
-$count2=0;
-$countresults=0;
+$count=0;
 foreach ($connections as $key => $value) {
-$count2+=1;
+
 
     if(isset($connections[$key]->location)){
 
         $name= $connections[$key]->location->name;
-        $name=str_replace("Area", "", $name);
-        $name=str_replace("area", "", $name);
-        $name=str_replace("Lesser", "", $name);
-        $name=str_replace("Greater", "", $name);
-        $name = strtr($name, 'àáâãäçèéêëìíîïñòóôõöùúûüýÿÀÁÂÃÄÇÈÉÊËÌÍÎÏÑÒÓÔÕÖÙÚÛÜÝ','aaaaaceeeeiiiinooooouuuuyyAAAAACEEEEIIIINOOOOOUUUUY');
-        if(array_key_exists($name,$town)){
-            if(array_key_exists("Number", $town[$name])){
-                $town[$name]["Number"]+=1;
-            }else{
-                $town[$name]["Number"]=1;
-            }    
-        } 
-        elseif(array_key_exists($name,$town2)){
-            if(array_key_exists("Number",$town2[$name])){
-                $town2[$name]["Number"]+=1;
-            }else{
-                $town2[$name]["Number"]=1;
+
+        if($name != "Other"){
+
+            $name=str_replace("Area", "", $name);
+            $name=str_replace("area", "", $name);
+            $name=str_replace("Lesser", "", $name);
+            $name=str_replace("Greater", "", $name);
+            $name=str_replace("/", "", $name);
+            $name=str_replace("Metro", "", $name);
+            $name = NoAccentTag($name);
+            $name = preg_replace('/\(.*\)/U', '', $name);
+            if(array_key_exists($name,$town)){
+                if(array_key_exists("Number", $town[$name])){
+                    $town[$name]["Number"]+=1;
+                }else{
+                    $town[$name]["Number"]=1;
+                }    
             } 
-        }
-        else{
-
-            $temp=str_replace(" ", "+", $name);
-            $count+=1;
-            $results=file_get_contents("https://maps.googleapis.com/maps/api/geocode/json?address=".$temp."");
-            $results=json_decode($results);
-
-            if(isset($results->error_message)){
-                var_dump($results);
+            elseif(array_key_exists($name,$town2)){
+                if(array_key_exists("Number",$town2[$name])){
+                    $town2[$name]["Number"]+=1;
+                }else{
+                    $town2[$name]["Number"]=1;
+                } 
             }
-            
-            if(is_object($results)){
-                $countresults+=1;
-                $lng=$results->results[0]->geometry->location->lng;
-                $lat=$results->results[0]->geometry->location->lat;
-                $indicatif=$results->results[0]->address_components;
-                $indicatif_sure=$results->results[0]->address_components;
-                end($indicatif);
-                $end=key($indicatif);
-                $indtemp=$indicatif[$end]->short_name;
-                $zone=$countryList[$indtemp];
+            else{
 
-                if(!empty($lat) and !empty($lng)){
 
-                    $virgule=strpos($name, ",");
-
-                    if(!empty($virgule)){
-
-                        $town[$name]=array(
-                            "city"=>$name,
-                            "Number"=>0,
-                            "lat"=>$lat,
-                            "lng"=>$lng
-                        );
-                        $sql="INSERT INTO town VALUES('','".$name."','".$indicatif."','".$zone."','".$lng."','".$lat."')";
-                        $req=mysqli_query($link,$sql);
-
-                    }else{
-
-                        $virgule=strpos($name, ",");
-
-                        if(!empty($virgule)){
-
-                            $town[$name]=array(
-                                "city"=>$name,
-                                "Number"=>0,
-                                "lat"=>$lat,
-                                "lng"=>$lng,
-                                "zone"=>$countryList[$indtemp]
-                            );
-                            $sql="INSERT INTO town VALUES('','".$name."','".$indicatif."','".$zone."','".$lng."','".$lat."')";
-                            $req=mysqli_query($link,$sql);
-
-                        }else{
-
-                            $town[$name]=array(
-                                "city"=>$name,
-                                "Number"=>0,
-                                "lat"=>$lat,
-                                "lng"=>$lng,
-                            );
-                            $sql2="INSERT INTO town2 VALUES('','".$name."','".$zone."','".$lng."','".$lat."')";
-                            $req2=mysqli_query($link,$sql2);
-
+                $countgeo+=1;
+                $temp=str_replace(" ", "+", $name);
+                
+                $results=file_get_contents("https://maps.googleapis.com/maps/api/geocode/json?address=".$temp."");
+                $results=json_decode($results);
+                if(!isset($results->results[0]->partial_match)){
+                    if(isset($results->error_message)){
+                        var_dump($results);
+                    }
+                    
+                    if(is_object($results)){
+                        $lng=$results->results[0]->geometry->location->lng;
+                        $lat=$results->results[0]->geometry->location->lat;
+                        $formatted_address=$results->results[0]->formatted_address;
+                        $indicatif=$results->results[0]->address_components;
+                        foreach ($indicatif as $key => $value) {
+                            if($value->types[0] === "country")
+                            $indtemp = $value->short_name;
                         }
-                    }                    
-                }
-            }
-        }              
+                        $zone=$countryList[$indtemp];
+
+                        if(!empty($lat) and !empty($lng)){
+
+                            $virgule=strpos($name, ",");
+
+                            if(!empty($virgule)){
+
+                                $town[$name]=array(
+                                    "city"=>$name,
+                                    "Number"=>1,
+                                    "lat"=>$lat,
+                                    "lng"=>$lng,
+                                    "zone"=>$zone
+                                );
+                                $sql="INSERT INTO town VALUES('','".$name."','".$indtemp."','".$zone."','".$lng."','".$lat."')";
+                                $req=mysqli_query($link,$sql);
+
+                            }else{
+
+                                $virgule=strpos($name, ",");
+
+                                if(!empty($virgule)){
+
+                                    $town[$name]=array(
+                                        "city"=>$name,
+                                        "Number"=>1,
+                                        "lat"=>$lat,
+                                        "lng"=>$lng,
+                                        "zone"=>$zone
+                                    );
+                                    $sql="INSERT INTO town VALUES('','".$name."','".$indtemp."','".$zone."','".$lng."','".$lat."')";
+                                    $req=mysqli_query($link,$sql);
+
+                                }else{
+
+                                    $virgule2=strpos($formatted_address, ",");
+
+                                    if(!empty($virgule2)){
+
+                                        $town[$name]=array(
+                                        "city"=>$name,
+                                        "Number"=>1,
+                                        "lat"=>$lat,
+                                        "lng"=>$lng,
+                                        "zone"=>$zone
+                                        );
+                                        $sql="INSERT INTO town VALUES('','".$name."','".$indtemp."','".$zone."','".$lng."','".$lat."')";
+                                        $req=mysqli_query($link,$sql);
+
+                                    }else{
+
+                                        $town[$name]=array(
+                                            "city"=>$name,
+                                            "Number"=>1,
+                                            "lat"=>$lat,
+                                            "lng"=>$lng,
+                                            "zone"=>$zone
+                                        );
+                                        $sql2="INSERT INTO town2 VALUES('','".$name."','".$zone."','".$lng."','".$lat."')";
+                                        $req2=mysqli_query($link,$sql2);
+
+                                    }
+                                }
+                            }                    
+                        }
+                    }
+                }           
+            } 
+        }             
     }
 }
 $count=0;
@@ -294,136 +328,140 @@ $zones=array(
 );
 $zonestotal=0;
 
+
 foreach ($town as $key => $value) {
 
-    $zones[$value["zone"]]+=$value["Number"];
-    $zonestotal+=$value["Number"];
+    if(!empty($value["Number"])){
+
+        $zones[$value["zone"]]+=$value["Number"];
+        $zonestotal+=$value["Number"];
 
 
-    $virgule=strpos($key, ",");
+        $virgule=strpos($key, ",");
 
-    if(!empty($virgule)){
+        if(!empty($virgule)){
 
-        $array=explode(",",$key);
-        $key=$array[0];
-    }
+            $array=explode(",",$key);
+            $key=$array[0];
+        }
 
-    //$count+=$value["Number"];
+        //$count+=$value["Number"];
 
-    if($value["Number"]>$max1){
-        $max5=$max4;
-        $max4=$max3;
-        $max3=$max2;
-        $max2=$max1;
-        $max1=$value["Number"];
-        $town5=$town4;
-        $town4=$town3;
-        $town3=$towndeux;
-        $towndeux=$town1;
-        $town1=$key;
-    }else{
-        if($value["Number"]>$max2){
+        if($value["Number"]>$max1){
             $max5=$max4;
             $max4=$max3;
             $max3=$max2;
-            $max2=$value["Number"];
+            $max2=$max1;
+            $max1=$value["Number"];
             $town5=$town4;
             $town4=$town3;
             $town3=$towndeux;
-            $towndeux=$key;
+            $towndeux=$town1;
+            $town1=$key;
         }else{
-            if($value["Number"]>$max3){
+            if($value["Number"]>$max2){
                 $max5=$max4;
                 $max4=$max3;
-                $max3=$value["Number"];
+                $max3=$max2;
+                $max2=$value["Number"];
                 $town5=$town4;
                 $town4=$town3;
-                $town3=$key;
+                $town3=$towndeux;
+                $towndeux=$key;
             }else{
-                if($value["Number"]>$max4){
+                if($value["Number"]>$max3){
                     $max5=$max4;
-                    $max4=$value["Number"];
+                    $max4=$max3;
+                    $max3=$value["Number"];
                     $town5=$town4;
-                    $town4=$key;
+                    $town4=$town3;
+                    $town3=$key;
                 }else{
-                    if($value["Number"]>$max5){
-                    $max5=$value["Number"];
-                    $town5=$key;
+                    if($value["Number"]>$max4){
+                        $max5=$max4;
+                        $max4=$value["Number"];
+                        $town5=$town4;
+                        $town4=$key;
+                    }else{
+                        if($value["Number"]>$max5){
+                        $max5=$value["Number"];
+                        $town5=$key;
+                        }
                     }
                 }
             }
-        }
-    }          
+        }  
+    }       
 }
 foreach ($town2 as $key => $value) {
 
-    $zones[$value["zone"]]+=$value["Number"];
-    $zonestotal+=$value["Number"];
+    if(!empty($value["Number"])){
 
-    $virgule=strpos($key, ",");
+        $zones[$value["zone"]]+=$value["Number"];
+        $zonestotal+=$value["Number"];
 
-    if(!empty($virgule)){
+        $virgule=strpos($key, ",");
 
-        $array=explode(",",$key);
-        $key=$array[0];
-        $key=str_replace(" ", "", $key);
-    }
+        if(!empty($virgule)){
+
+            $array=explode(",",$key);
+            $key=$array[0];
+            $key=str_replace(" ", "", $key);
+        }
 
 
-    if($value["Number"]>$max1){
-        $max5=$max4;
-        $max4=$max3;
-        $max3=$max2;
-        $max2=$max1;
-        $max1=$value["Number"];
-        $town5=$town4;
-        $town4=$town3;
-        $town3=$towndeux;
-        $towndeux=$town1;
-        $town1=$key;
-    }else{
-        if($value["Number"]>$max2){
+        if($value["Number"]>$max1){
             $max5=$max4;
             $max4=$max3;
             $max3=$max2;
-            $max2=$value["Number"];
+            $max2=$max1;
+            $max1=$value["Number"];
             $town5=$town4;
             $town4=$town3;
             $town3=$towndeux;
-            $towndeux=$key;
+            $towndeux=$town1;
+            $town1=$key;
         }else{
-            if($value["Number"]>$max3){
+            if($value["Number"]>$max2){
                 $max5=$max4;
                 $max4=$max3;
-                $max3=$value["Number"];
+                $max3=$max2;
+                $max2=$value["Number"];
                 $town5=$town4;
                 $town4=$town3;
-                $town3=$key;
+                $town3=$towndeux;
+                $towndeux=$key;
             }else{
-                if($value["Number"]>$max4){
+                if($value["Number"]>$max3){
                     $max5=$max4;
-                    $max4=$value["Number"];
+                    $max4=$max3;
+                    $max3=$value["Number"];
                     $town5=$town4;
-                    $town4=$key;
+                    $town4=$town3;
+                    $town3=$key;
                 }else{
-                    if($value["Number"]>$max5){
-                    $max5=$value["Number"];
-                    $town5=$key;
+                    if($value["Number"]>$max4){
+                        $max5=$max4;
+                        $max4=$value["Number"];
+                        $town5=$town4;
+                        $town4=$key;
+                    }else{
+                        if($value["Number"]>$max5){
+                        $max5=$value["Number"];
+                        $town5=$key;
+                        }
                     }
                 }
             }
         }
     }
-
 }
 $tempsbdd =gmdate("i:s",strtotime(date("H:i:s"))-strtotime($finapi));
 $tempsapi =gmdate("i:s",strtotime($finapi)-strtotime($debutapi));
 echo "Temps d'appel api linkedin : ".$tempsapi."</br>";
 echo "Temps d'appel bdd : ".$tempsbdd."</br>";
-echo "Nombre d'appels geocode :".$count."</br>";
-echo "Nombre d'users :".$count2."</br>";
-echo "Nombre de results :".$countresults."</br>";
-        
+echo "Nombre d'appels geocode :".$countgeo."</br>";
+
 
 
 

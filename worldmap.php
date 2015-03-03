@@ -7,6 +7,7 @@ include("linkedinapi.php");
 $fin=date("H:i:s"); 
 $tempstotal =gmdate("i:s",strtotime($fin)-strtotime($debutapi));
 echo "Temps total : ".$tempstotal."</br>";
+
 ?>
 
     <head>
@@ -54,8 +55,6 @@ echo "Temps total : ".$tempstotal."</br>";
             window.onload = drawMyChart;
           
 
-        </script>
-        <script>
         var tableau= {};
             <?php
 
@@ -63,11 +62,11 @@ echo "Temps total : ".$tempstotal."</br>";
                     if(!empty($value["Number"])){
                          $temp=str_replace(" ", "", $value["city"]);
 
-                    echo "tableau['".$temp."'] = {
-                        center: new google.maps.LatLng(".$value["lat"].", ".$value["lng"]."),
-                        Number: ".$value["Number"].",
-                        Location : '".$value["city"]."'
-                    };\n";
+                    echo 'tableau["'.$temp.'"] = {
+                        center: new google.maps.LatLng('.$value['lat'].', '.$value['lng'].'),
+                        Number: '.$value['Number'].',
+                        Location : "'.$value['city'].'"
+                    };';
                     }
                         
 
