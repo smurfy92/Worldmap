@@ -1,5 +1,5 @@
 <?php 
-include("linkedinapi.php");
+include("Engine/linkedinapi.php");
 ?>
 
 <html>
@@ -12,10 +12,10 @@ echo "Temps total : ".$tempstotal."</br>";
 
     <head>
         <title>Worldmap</title>
-        <link rel="stylesheet" type="text/css" href="worldmap.css">
+        <link rel="stylesheet" type="text/css" href="css/worldmap.css">
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
         <script src="https://maps.googleapis.com/maps/api/js"></script>
-        <script type="application/javascript" src="awesomechart.js"></script>
+        <script type="application/javascript" src="js/awesomechart.js"></script>
         <script>
 
             
@@ -112,7 +112,7 @@ echo "Temps total : ".$tempstotal."</br>";
     </head>
     <body>
         <div class="block">
-            <a href="disconnect.php">Log out</a>
+            <a href="Engine/disconnect.php">Log out</a>
         </div>
         <div class="blockuser">
             <a class="linkuser" href=<?php echo $url?>><h1><?php echo $username ?></h1></a>            
