@@ -15,44 +15,8 @@ echo "Temps total : ".$tempstotal."</br>";
         <link rel="stylesheet" type="text/css" href="css/worldmap.css">
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
         <script src="https://maps.googleapis.com/maps/api/js"></script>
-        <script type="application/javascript" src="js/awesomechart.js"></script>
+        <script src="js/Chart.js"></script>
         <script>
-
-            
-            var cercle={};
-
-            <?php 
-            
-            foreach ($zones as $key => $value) {
-                echo "var ".$key." = {zone:'".$key."',nb:".$value."};\n";
-            }
-            echo "var max1 = {nb:".$max1.",town:'".$town1."'};\n";
-            echo "var max2 = {nb:".$max2.",town:'".$towndeux."'};\n";
-            echo "var max3 = {nb:".$max3.",town:'".$town3."'};\n";
-            echo "var max4 = {nb:".$max4.",town:'".$town4."'};\n";
-            echo "var max5 = {nb:".$max5.",town:'".$town5."'};\n";
-                    
-            ?>
-            
-            function drawMyChart(){
-            if(!!document.createElement('canvas').getContext){ //check that the canvas
-                                                               // element is supported
-                var mychart = new AwesomeChart('canvas1');
-                mychart.title = "Top 5 villes";
-                mychart.data = [max1.nb , max2.nb , max3.nb , max4.nb, max5.nb];
-                mychart.labels = [max1.town, max2.town, max3.town, max4.town, max5.town];
-                mychart.chartType = 'pie';
-                mychart.draw();
-                var mychart = new AwesomeChart('canvas2');
-                mychart.title = "Par Zones";
-                mychart.data = [Africa.nb , Americas.nb , Asia.nb , Europe.nb , Oceania.nb];
-                mychart.labels = [Africa.zone , Americas.zone , Asia.zone , Europe.zone , Oceania.zone];
-                mychart.chartType = 'pie';
-                mychart.draw();
-                }
-            }
-          
-            window.onload = drawMyChart;
           
 
         var tableau= {};
@@ -73,7 +37,6 @@ echo "Temps total : ".$tempstotal."</br>";
                 }
 
             ?>
-            console.log(tableau);
 
             var cityCircle;
 
@@ -112,7 +75,7 @@ echo "Temps total : ".$tempstotal."</br>";
     </head>
     <body>
         <div class="block">
-            <a href="Engine/disconnect.php">Log out</a>
+            <a href="disconnect.php">Log out</a>
         </div>
         <div class="blockuser">
             <a class="linkuser" href=<?php echo $url?>><h1><?php echo $username ?></h1></a>            
@@ -120,18 +83,124 @@ echo "Temps total : ".$tempstotal."</br>";
         </div>
         
         <div id="map-canvas"></div>
-        <?php 
-         ?>
 
-        <canvas id="canvas1" width="300" height="300">
-            Your web-browser does not support the HTML 5 canvas element.
-        </canvas>
-        <canvas id="canvas2" width="300" height="300">
-            Your web-browser does not support the HTML 5 canvas element.
-        </canvas>
+        <div class="canvas1">
+
+            <div class="canvas1title">Top 5 villes</div>
+
+            <canvas id="myChart1" height="300">
+                Your web-browser does not support the HTML 5 canvas element.
+            </canvas>
+
+        </div>
+
+        <div class="canvas2">
+
+            <div class="canvas2title">Par Zones</div>
+
+            <canvas id="myChart2" height="300">
+                Your web-browser does not support the HTML 5 canvas element.
+            </canvas>
+        </div>
 
 
-        
+
+        <script>
+
+            <?php 
+            
+            foreach ($zones as $key => $value) {
+                echo "var ".$key." = {zone:'".$key."',nb:".$value."};\n";
+            }
+            echo "var max1 = {nb:".$max1.",town:'".$town1."'};\n";
+            echo "var max2 = {nb:".$max2.",town:'".$towndeux."'};\n";
+            echo "var max3 = {nb:".$max3.",town:'".$town3."'};\n";
+            echo "var max4 = {nb:".$max4.",town:'".$town4."'};\n";
+            echo "var max5 = {nb:".$max5.",town:'".$town5."'};\n";
+                    
+            ?>
+
+            var ctx1 = document.getElementById("myChart1").getContext("2d");
+            // For a pie chart
+            var ctx2 = document.getElementById("myChart2").getContext("2d");
+            ctx1.fillStyle = "blue";
+            ctx1.font = "bold 16px Arial";
+            ctx1.fillText("Zibri", 0, 0);
+            
+
+            var data1 = [
+                {
+                    value: max1.nb,
+                    color:"#F7464A",
+                    highlight: "#FF5A5E",
+                    label: max1.town
+                },
+                {
+                    value: max2.nb,
+                    color: "#46BFBD",
+                    highlight: "#5AD3D1",
+                    label: max2.town
+                },
+                {
+                    value: max3.nb,
+                    color: "#FDB45C",
+                    highlight: "#FFC870",
+                    label: max3.town
+                },
+                {
+                    value: max4.nb,
+                    color: "#FDB45C",
+                    highlight: "#FFC870",
+                    label: max4.town
+                },
+                {
+                    value: max5.nb,
+                    color: "#FDB45C",
+                    highlight: "#FFC870",
+                    label: max5.town
+                }
+            ]
+            var data2 = [
+                {
+                    value: Europe.nb,
+                    color:"#F7464A",
+                    highlight: "#FF5A5E",
+                    label: Europe.zone
+                },
+                {
+                    value: Americas.nb,
+                    color: "#46BFBD",
+                    highlight: "#5AD3D1",
+                    label: Americas.zone
+                },
+                {
+                    value: Africa.nb,
+                    color: "#FDB45C",
+                    highlight: "#FFC870",
+                    label: Africa.zone
+                },
+                {
+                    value: Asia.nb,
+                    color: "#FDB45C",
+                    highlight: "#FFC870",
+                    label: Asia.zone
+                },
+                {
+                    value: Oceania.nb,
+                    color: "#FDB45C",
+                    highlight: "#FFC870",
+                    label: Oceania.zone
+                }
+            ]
+            var options = [
+                {
+                    legendTemplate : "Top 5 Villes"
+                }
+            ]
+            var myPieChart1 = new Chart(ctx1).Pie(data1,options);
+            var myPieChart2 = new Chart(ctx2).Pie(data2);
+
+        </script>
 
     </body>
 </html>
