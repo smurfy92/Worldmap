@@ -1,23 +1,47 @@
 <?php 
-include("Engine/linkedinapi.php");
-?>
-
-<html>
-<?php 
+include_once("Engine/linkedinapi.php");
 $fin=date("H:i:s"); 
 $tempstotal =gmdate("i:s",strtotime($fin)-strtotime($debutapi));
 echo "Temps total : ".$tempstotal."</br>";
-
 ?>
 
+<html>
     <head>
         <title>Worldmap</title>
         <link rel="stylesheet" type="text/css" href="css/worldmap.css">
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
         <script src="https://maps.googleapis.com/maps/api/js"></script>
+        <script type="text/javascript" src="https://www.google.com/jsapi"></script>
         <script src="js/Chart.js"></script>
-        <script>
+        <script type="text/javascript">
+
+        //Geochart
+
+            google.load("visualization", "1", {packages:["geochart"]});
+            google.setOnLoadCallback(drawRegionsMap);
+
+            function drawRegionsMap() {
+
+                var data = google.visualization.arrayToDataTable([
+                    ['Country', 'Popularity'],
+                    <?php 
+                        foreach ($pays as $key => $value) {
+                            echo "['".$key."',".$value."],";
+                        }
+                    ?>
+                    
+                    
+                    ]);
+
+                var options = {};
+
+                var chart = new google.visualization.GeoChart(document.getElementById('regions_div'));
+
+                chart.draw(data, options);
+            }
+
           
+        //On initialise les données pour google map
 
         var tableau= {};
             <?php
@@ -37,6 +61,9 @@ echo "Temps total : ".$tempstotal."</br>";
                 }
 
             ?>
+
+
+            //google map
 
             var cityCircle;
 
@@ -81,6 +108,7 @@ echo "Temps total : ".$tempstotal."</br>";
             <a class="linkuser" href=<?php echo $url?>><h1><?php echo $username ?></h1></a>            
             <a class="linkuser" href=<?php echo $url?>><h4><?php echo $userapi->headline ?></h4></a>
         </div>
+        <div id="regions_div" style="width: 900px; height: 500px; margin: auto;"></div>
         
         <div id="map-canvas"></div>
 
@@ -102,10 +130,9 @@ echo "Temps total : ".$tempstotal."</br>";
                 Your web-browser does not support the HTML 5 canvas element.
             </canvas>
         </div>
-
-
-
         <script>
+
+        //tableau pour les camemberts
 
             <?php 
             
@@ -127,6 +154,8 @@ echo "Temps total : ".$tempstotal."</br>";
             ctx1.font = "bold 16px Arial";
             ctx1.fillText("Zibri", 0, 0);
             
+
+            //camembert pour les villes
 
             var data1 = [
                 {
@@ -160,6 +189,11 @@ echo "Temps total : ".$tempstotal."</br>";
                     label: max5.town
                 }
             ]
+
+
+            // camembert pour les zones
+
+
             var data2 = [
                 {
                     value: Europe.nb,

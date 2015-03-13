@@ -1,4 +1,5 @@
 <?php
+
 // Change these
 define('API_KEY',      '77291yw2hequ2v' );
 define('API_SECRET',   '3YFqCY7jNDZicre2' );
@@ -11,6 +12,8 @@ session_name('linkedin');
 session_start();
 include("connecteur.php");
 include("country.php");
+include("countries.php");
+
 
 $debutapi =date("H:i:s");
 $debut =date("H:i:s");
@@ -116,6 +119,7 @@ function fetch($method, $resource, $body = '') {
     // Native PHP object, please
     return json_decode($response);
 }
+
 function NoAccentTag($str)
 {
     $str = htmlentities($str);
@@ -182,6 +186,61 @@ while($data2=mysqli_fetch_assoc($req2)){
 
 // now creating array with geocode calls and database insertion
 $count=0;
+$pays=[];
+$pays["Number"]=0;
+foreach ($connections as $key => $value) {
+    $pays["Number"]+=1;
+
+    if(isset($connections[$key]->location)){
+
+        $name= $connections[$key]->location->name;
+
+        $name=str_replace(" Area", "", $name);
+        $name=str_replace(" area", "", $name);
+        $name=str_replace("Lesser", "", $name);
+        $name=str_replace("Greater", "", $name);
+        $name=str_replace("/", "", $name);
+        $name=str_replace("Metro", "", $name);
+        if($name != "Other"){
+
+            $virgule=strpos($name, ",");
+
+            if(empty($virgule)){
+                if(in_array($name, $countries)){
+                    if(array_key_exists($name, $pays)){
+
+                        $pays[$name]+=1;
+
+                    }else{
+
+                        $pays[$name]=1;
+
+                    }
+                }
+
+                
+                
+            }else{
+
+                $temp=explode(", ",$name);
+
+                if(in_array($temp[1], $countries)){
+
+                    if(array_key_exists($temp[1], $pays)){
+
+                        $pays[$temp[1]]+=1;
+
+                    }else{
+
+                        $pays[$temp[1]]=1;
+
+                    }
+                }
+            }
+        }
+    }
+}
+
 foreach ($connections as $key => $value) {
 
 
@@ -199,7 +258,9 @@ foreach ($connections as $key => $value) {
             $name=str_replace("Metro", "", $name);
             $name = NoAccentTag($name);
             $name = preg_replace('/\(.*\)/U', '', $name);
+
             if(array_key_exists($name,$town)){
+
                 if(array_key_exists("Number", $town[$name])){
                     $town[$name]["Number"]+=1;
                 }else{
@@ -348,6 +409,7 @@ foreach ($town as $key => $value) {
         //$count+=$value["Number"];
 
         if($value["Number"]>$max1){
+
             $max5=$max4;
             $max4=$max3;
             $max3=$max2;
@@ -358,8 +420,11 @@ foreach ($town as $key => $value) {
             $town3=$towndeux;
             $towndeux=$town1;
             $town1=$key;
+
         }else{
+
             if($value["Number"]>$max2){
+
                 $max5=$max4;
                 $max4=$max3;
                 $max3=$max2;
@@ -368,24 +433,34 @@ foreach ($town as $key => $value) {
                 $town4=$town3;
                 $town3=$towndeux;
                 $towndeux=$key;
+
             }else{
+
                 if($value["Number"]>$max3){
+
                     $max5=$max4;
                     $max4=$max3;
                     $max3=$value["Number"];
                     $town5=$town4;
                     $town4=$town3;
                     $town3=$key;
+
                 }else{
+
                     if($value["Number"]>$max4){
+
                         $max5=$max4;
                         $max4=$value["Number"];
                         $town5=$town4;
                         $town4=$key;
+
                     }else{
+
                         if($value["Number"]>$max5){
+
                         $max5=$value["Number"];
                         $town5=$key;
+                        
                         }
                     }
                 }
@@ -411,6 +486,7 @@ foreach ($town2 as $key => $value) {
 
 
         if($value["Number"]>$max1){
+
             $max5=$max4;
             $max4=$max3;
             $max3=$max2;
@@ -421,8 +497,11 @@ foreach ($town2 as $key => $value) {
             $town3=$towndeux;
             $towndeux=$town1;
             $town1=$key;
+
         }else{
+
             if($value["Number"]>$max2){
+
                 $max5=$max4;
                 $max4=$max3;
                 $max3=$max2;
@@ -431,24 +510,34 @@ foreach ($town2 as $key => $value) {
                 $town4=$town3;
                 $town3=$towndeux;
                 $towndeux=$key;
+
             }else{
+
                 if($value["Number"]>$max3){
+
                     $max5=$max4;
                     $max4=$max3;
                     $max3=$value["Number"];
                     $town5=$town4;
                     $town4=$town3;
                     $town3=$key;
+
                 }else{
+
                     if($value["Number"]>$max4){
+
                         $max5=$max4;
                         $max4=$value["Number"];
                         $town5=$town4;
                         $town4=$key;
+
                     }else{
+
                         if($value["Number"]>$max5){
+
                         $max5=$value["Number"];
                         $town5=$key;
+
                         }
                     }
                 }
@@ -461,8 +550,5 @@ $tempsapi =gmdate("i:s",strtotime($finapi)-strtotime($debutapi));
 echo "Temps d'appel api linkedin : ".$tempsapi."</br>";
 echo "Temps d'appel bdd : ".$tempsbdd."</br>";
 echo "Nombre d'appels geocode :".$countgeo."</br>";
-
-
-
 
 ?>
