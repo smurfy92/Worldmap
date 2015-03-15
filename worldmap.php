@@ -4,7 +4,6 @@ $fin=date("H:i:s");
 $tempstotal =gmdate("i:s",strtotime($fin)-strtotime($debutapi));
 echo "Temps total : ".$tempstotal."</br>";
 ?>
-test
 <html>
     <head>
         <title>Worldmap</title>
