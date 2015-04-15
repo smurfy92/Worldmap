@@ -3,16 +3,17 @@
 // Change these
 define('API_KEY',      '77291yw2hequ2v' );
 define('API_SECRET',   '3YFqCY7jNDZicre2' );
-define('REDIRECT_URI', 'http://' . $_SERVER['SERVER_NAME'] .':8888'. $_SERVER['SCRIPT_NAME']);
+define('REDIRECT_URI', 'http://' . $_SERVER['SERVER_NAME'] . $_SERVER['SCRIPT_NAME']);
 define('SCOPE',        'r_fullprofile r_emailaddress rw_nus r_network r_contactinfo r_basicprofile');
 
 
 // You'll probably use a database
 session_name('linkedin');
 session_start();
-include("connecteur.php");
 include("country.php");
 include("countries.php");
+include("countrycodes.php");
+date_default_timezone_set("UTC"); 
 
 
 $debutapi =date("H:i:s");
@@ -160,6 +161,7 @@ $countgeo=0;
 $towntotal=0;
 $town2total=0;
 
+/*
 $sql1="SELECT * FROM town";
 $req1=mysqli_query($link,$sql1);
 
@@ -185,37 +187,79 @@ while($data2=mysqli_fetch_assoc($req2)){
 
 
 // now creating array with geocode calls and database insertion
-$count=0;
+*/
+$countpays=0;
+$other=0;
 $pays=[];
 $pays["Number"]=0;
-foreach ($connections as $key => $value) {
-    $pays["Number"]+=1;
+$restes=0;
+$total=0;
+$states=0;
+foreach ($connections as $key => $value) {    
+    $countpays+=1;
 
-    if(isset($connections[$key]->location)){
+    if(isset($connections[$key]->location->name) && isset($connections[$key]->location->country->code)){
 
         $name= $connections[$key]->location->name;
-
         $name=str_replace(" Area", "", $name);
         $name=str_replace(" area", "", $name);
         $name=str_replace("Lesser", "", $name);
         $name=str_replace("Greater", "", $name);
         $name=str_replace("/", "", $name);
         $name=str_replace("Metro", "", $name);
+        $name=str_replace(" Bay", "", $name);
+        $name = NoAccentTag($name);
+        if($name == "United States"){
+            $states+=1;
+        }
+        //echo "nom:".$name." code:".$code."</br>";
         if($name != "Other"){
+            $code= $connections[$key]->location->country->code;
+            $codetmp=$code=strtoupper ($code);
+            $code = $countryList[$code];
 
             $virgule=strpos($name, ",");
 
             if(empty($virgule)){
                 if(in_array($name, $countries)){
+                    $total+=1;
                     if(array_key_exists($name, $pays)){
 
-                        $pays[$name]+=1;
+                        $pays[$name]["Number"]+=1;
+                        $pays2[$name]["Number"]+=1;
 
                     }else{
 
-                        $pays[$name]=1;
+                        $pays[$name]["Number"]=1;
+                        $pays[$name]["code"]=$code;
+                        $pays2[$name]["Number"]=1;
+                        $pays2[$name]["code"]=$code;
 
                     }
+                }else{
+                    if(array_key_exists($codetmp, $countrycodes)){
+                        $total+=1;
+
+                        $name=$countrycodes[$codetmp];
+
+                        if(array_key_exists($name, $pays)){
+
+                            $pays[$name]["Number"]+=1;
+                            $pays2[$name]["Number"]+=1;
+
+                        }else{
+
+                            $pays[$name]["Number"]=1;
+                            $pays[$name]["code"]=$code;
+                            $pays2[$name]["Number"]=1;
+                            $pays2[$name]["code"]=$code;
+
+                        }
+                    }else{
+                        
+                        echo "nom:".$name." code:".$code."</br>";
+                    }
+
                 }
 
                 
@@ -225,22 +269,51 @@ foreach ($connections as $key => $value) {
                 $temp=explode(", ",$name);
 
                 if(in_array($temp[1], $countries)){
+                    $total+=1;
 
                     if(array_key_exists($temp[1], $pays)){
+                        //echo $temp[1];
 
-                        $pays[$temp[1]]+=1;
+                        $pays[$temp[1]]["Number"]+=1;
+                        $pays[$temp[1]]["code"]=$code;
+                        $pays2[$name]["Number"]+=1;
+                        $pays2[$name]["code"]=$code;
 
                     }else{
+                        //echo $temp[1];
 
-                        $pays[$temp[1]]=1;
+                        $pays[$temp[1]]["Number"]=1;
+                        $pays[$temp[1]]["code"]=$code;
+                        $pays2[$name]["Number"]=1;
+                        $pays2[$name]["code"]=$code;
 
+                    }
+                }else{
+                    if(in_array($temp[2], $countries)){
+                    $total+=1;
+
+                        if(array_key_exists($temp[2], $pays)){
+
+                            $pays[$temp[2]]["Number"]+=1;
+                            $pays[$temp[2]]["code"]=$code;
+                            $pays2[$name]["Number"]+=1;
+                            $pays2[$name]["code"]=$code;
+
+                        }else{
+
+                            $pays[$temp[2]]["Number"]=1;
+                            $pays[$temp[2]]["code"]=$code;
+                            $pays2[$name]["Number"]=1;
+                            $pays2[$name]["code"]=$code;
+
+                        }
                     }
                 }
             }
         }
     }
 }
-
+/*
 foreach ($connections as $key => $value) {
 
 
@@ -367,7 +440,7 @@ foreach ($connections as $key => $value) {
             } 
         }             
     }
-}
+}*/
 $count=0;
 $max1=0;
 $max2=0;
@@ -375,7 +448,7 @@ $max3=0;
 $max4=0;
 $max5=0;
 $town1="";
-$towndeux="";
+$town2="";
 $town3="";
 $town4="";
 $town5="";
@@ -387,24 +460,25 @@ $zones=array(
 "Oceania"=>0
 
 );
+$paysfail=[];
 $zonestotal=0;
 
 
-foreach ($town as $key => $value) {
+foreach ($pays2 as $key => $value) {
 
-    if(!empty($value["Number"])){
+    if(!empty($value["Number"]) && !empty($value["code"])){
 
-        $zones[$value["zone"]]+=$value["Number"];
+        $zones[$value["code"]]+=$value["Number"];
         $zonestotal+=$value["Number"];
 
 
-        $virgule=strpos($key, ",");
+        /*$virgule=strpos($value, ",");
 
         if(!empty($virgule)){
 
-            $array=explode(",",$key);
-            $key=$array[0];
-        }
+            $array=explode(",",$value);
+            $value=$array[0];
+        }*/
 
         //$count+=$value["Number"];
 
@@ -417,8 +491,8 @@ foreach ($town as $key => $value) {
             $max1=$value["Number"];
             $town5=$town4;
             $town4=$town3;
-            $town3=$towndeux;
-            $towndeux=$town1;
+            $town3=$town2;
+            $town2=$town1;
             $town1=$key;
 
         }else{
@@ -431,8 +505,8 @@ foreach ($town as $key => $value) {
                 $max2=$value["Number"];
                 $town5=$town4;
                 $town4=$town3;
-                $town3=$towndeux;
-                $towndeux=$key;
+                $town3=$town2;
+                $town2=$key;
 
             }else{
 
@@ -466,9 +540,13 @@ foreach ($town as $key => $value) {
                 }
             }
         }  
+    }else{
+        $paysfail[$key]["Number"]=$value["Number"];
+        $paysfail[$key]["code"]=$value["code"];
     }       
 }
-foreach ($town2 as $key => $value) {
+
+/*foreach ($town2 as $key => $value) {
 
     if(!empty($value["Number"])){
 
@@ -544,11 +622,14 @@ foreach ($town2 as $key => $value) {
             }
         }
     }
-}
+}*/
 $tempsbdd =gmdate("i:s",strtotime(date("H:i:s"))-strtotime($finapi));
 $tempsapi =gmdate("i:s",strtotime($finapi)-strtotime($debutapi));
 echo "Temps d'appel api linkedin : ".$tempsapi."</br>";
 echo "Temps d'appel bdd : ".$tempsbdd."</br>";
 echo "Nombre d'appels geocode :".$countgeo."</br>";
+echo "Nombre a atteindre :".$countpays."</br>";
+echo "Nombre atteint :".$total."</br>";
+echo "States :".$states."</br>";
 
 ?>

@@ -25,7 +25,12 @@ echo "Temps total : ".$tempstotal."</br>";
                     ['Country', 'Popularity'],
                     <?php 
                         foreach ($pays as $key => $value) {
-                            echo "['".$key."',".$value."],";
+                            if($key == "Number"){
+
+                            }else{
+                                echo '["'.$key.'",'.$value["Number"].'],';
+                            }
+                            
                         }
                     ?>
                     
@@ -42,7 +47,7 @@ echo "Temps total : ".$tempstotal."</br>";
           
         //On initialise les données pour google map
 
-        var tableau= {};
+        /*var tableau= {};
             <?php
 
                 foreach ($town as $key => $value) {
@@ -97,6 +102,7 @@ echo "Temps total : ".$tempstotal."</br>";
 
             
             console.log(tableau);
+            */
         </script>   
     </head>
     <body>
@@ -109,7 +115,7 @@ echo "Temps total : ".$tempstotal."</br>";
         </div>
         <div id="regions_div" style="width: 900px; height: 500px; margin: auto;"></div>
         
-        <div id="map-canvas"></div>
+        <!--<div id="map-canvas"></div>-->
 
         <div class="canvas1">
 
@@ -139,7 +145,7 @@ echo "Temps total : ".$tempstotal."</br>";
                 echo "var ".$key." = {zone:'".$key."',nb:".$value."};\n";
             }
             echo "var max1 = {nb:".$max1.",town:'".$town1."'};\n";
-            echo "var max2 = {nb:".$max2.",town:'".$towndeux."'};\n";
+            echo "var max2 = {nb:".$max2.",town:'".$town2."'};\n";
             echo "var max3 = {nb:".$max3.",town:'".$town3."'};\n";
             echo "var max4 = {nb:".$max4.",town:'".$town4."'};\n";
             echo "var max5 = {nb:".$max5.",town:'".$town5."'};\n";
